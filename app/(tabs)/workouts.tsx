@@ -1,9 +1,9 @@
 import { Text, View } from "react-native";
 
-export default function HomeScreen() {
+export default function WorkoutScreen() {
   return (
     <View>
-      <Text>Iron Quest - Accueil</Text>
+      <Text>Iron Quest - Workout</Text>
     </View>
   );
 }
