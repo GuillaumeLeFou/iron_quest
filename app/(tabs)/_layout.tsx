@@ -31,6 +31,13 @@ export default function TabLayout() {
           title: "Quêtes",
         }}
       />
+
+      <Tabs.Screen
+        name="achievements"
+        options={{
+          title: "Succès",
+        }}
+      />
     </Tabs>
   );
 }
