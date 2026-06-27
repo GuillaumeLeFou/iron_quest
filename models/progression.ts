@@ -15,3 +15,14 @@ export function getNewLevel(level: number, xp: number): LevelUpResult {
 
   return { newLevel: level, remainingXp: xp };
 }
+
+export function getXpPercentage(level: number, xp: number): number {
+  const xpRequired = getXpRequiredForLevel(level);
+  const percentage = (xp / xpRequired) * 100;
+
+  if (percentage > 100) {
+    return 100;
+  }
+
+  return percentage;
+}
