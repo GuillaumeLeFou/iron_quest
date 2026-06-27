@@ -1,4 +1,8 @@
-import { getNewLevel, getXpRequiredForLevel } from "./progression";
+import {
+  getNewLevel,
+  getXpPercentage,
+  getXpRequiredForLevel,
+} from "./progression";
 
 describe("getXpRequiredForLevel", () => {
   it("should return 150 xp for level 1", () => {
@@ -78,5 +82,33 @@ describe("getNewLevel", () => {
       newLevel: 6,
       remainingXp: 0,
     });
+  });
+});
+
+describe("getXpPercentage", () => {
+  it("should return 0 when xp is 0", () => {
+    expect(getXpPercentage(1, 0)).toBe(0);
+  });
+
+  it("should return 50 when xp is half the required xp", () => {
+    expect(getXpPercentage(1, 75)).toBe(50);
+  });
+
+  it("should return 100 when xp exactly matches the required xp", () => {
+    expect(getXpPercentage(1, 150)).toBe(100);
+  });
+
+  it("should never return more than 100", () => {
+    expect(getXpPercentage(1, 200)).toBe(100);
+  });
+
+  it("should calculate the correct percentage", () => {
+    expect(getXpPercentage(1, 30)).toBe(20);
+  });
+
+  it("should throw an error for an invalid level", () => {
+    expect(() => getXpPercentage(0, 100)).toThrow(
+      "Level must be at least 1, received: 0",
+    );
   });
 });
