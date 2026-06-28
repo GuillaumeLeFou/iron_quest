@@ -2,12 +2,11 @@ import { mockCharacter } from "@/mocks/character";
 import { mockQuests } from "@/mocks/quest";
 import { getXpPercentage, getXpRequiredForLevel } from "@/models/progression";
 import { getQuestStatus } from "@/models/quest";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 export default function HomeScreen() {
   const xpPercentage = getXpPercentage(mockCharacter.level, mockCharacter.xp);
   const xpRequired = getXpRequiredForLevel(mockCharacter.level);
-  console.log(mockQuests);
   return (
     <View>
       <Text> {mockCharacter.name} </Text>
@@ -43,6 +42,9 @@ export default function HomeScreen() {
           <Text> {getQuestStatus(quest)} </Text>
         </View>
       ))}
+      <Pressable onPress={() => console.log("Nouvelle séance !")}>
+        <Text>Nouvelle séance</Text>
+      </Pressable>
     </View>
   );
 }
