@@ -15,6 +15,7 @@ interface BaseExercise {
 
 export interface StrengthExercise extends BaseExercise {
   equipment: Equipment;
+  allowsAddedWeight?: boolean;
 }
 
 export interface CardioExercise extends BaseExercise {
