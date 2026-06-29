@@ -1,4 +1,29 @@
-import { getEstimatedOneRepMax, isNewPersonalRecord } from "./workout";
+import { WorkoutSession } from "@/types/workout";
+import {
+  getBestOneRepMax,
+  getEstimatedOneRepMax,
+  isNewPersonalRecord,
+} from "./workout";
+
+function createTestSession(
+  exerciseId: string,
+  sets: { weight: number; reps: number }[],
+): WorkoutSession {
+  return {
+    id: "session-1",
+    templateId: "template-1",
+    date: "2026-01-01",
+    duration: 3600,
+    notes: "",
+    exercises: [
+      {
+        type: "strength",
+        exerciseId,
+        sets,
+      },
+    ],
+  };
+}
 
 describe("getEstimatedOneRepMax", () => {
   it("should return the same weight for 0 reps", () => {
@@ -33,5 +58,46 @@ describe("isNewPersonalRecord", () => {
 
   it("should return false when the estimated 1RM is equal to the current record", () => {
     expect(isNewPersonalRecord(150, 5, 175)).toBe(false);
+  });
+});
+
+describe("getBestOneRepMax", () => {
+  it("should return 0 when there are no sessions", () => {
+    expect(getBestOneRepMax("bench", [])).toBe(0);
+  });
+
+  it("should return 0 when the exercise is not found", () => {
+    const sessions = [createTestSession("squat", [{ weight: 150, reps: 5 }])];
+
+    expect(getBestOneRepMax("bench", sessions)).toBe(0);
+  });
+
+  it("should return the best one rep max for one session", () => {
+    const sessions = [
+      createTestSession("bench", [
+        { weight: 100, reps: 5 }, // 116.66...
+        { weight: 150, reps: 5 }, // 175
+      ]),
+    ];
+
+    expect(getBestOneRepMax("bench", sessions)).toBe(175);
+  });
+
+  it("should return the best one rep max across multiple sessions", () => {
+    const sessions = [
+      createTestSession("bench", [{ weight: 100, reps: 5 }]),
+      createTestSession("bench", [{ weight: 150, reps: 5 }]),
+    ];
+
+    expect(getBestOneRepMax("bench", sessions)).toBe(175);
+  });
+
+  it("should ignore exercises with another exerciseId", () => {
+    const sessions = [
+      createTestSession("squat", [{ weight: 200, reps: 5 }]),
+      createTestSession("bench", [{ weight: 150, reps: 5 }]),
+    ];
+
+    expect(getBestOneRepMax("bench", sessions)).toBe(175);
   });
 });
