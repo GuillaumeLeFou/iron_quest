@@ -1,10 +1,13 @@
+import { useCharacter } from "@/context/character";
 import { mockWorkoutSessions } from "@/mocks/workout";
 import { getBestOneRepMax, isNewPersonalRecord } from "@/models/workout";
 import { getCurrentSession } from "@/services/session";
 import { WorkoutSession } from "@/types/workout";
+import { useEffect } from "react";
 import { Text, View } from "react-native";
 
 export default function Summary() {
+  const { addXp } = useCharacter();
   const last_session = getCurrentSession();
 
   function calculatedResults(session: WorkoutSession): {
@@ -37,6 +40,10 @@ export default function Summary() {
   const results = last_session
     ? calculatedResults(last_session)
     : { xpGained: 0, prs: 0 };
+
+  useEffect(() => {
+    addXp(results.xpGained);
+  }, []);
 
   return (
     <View>

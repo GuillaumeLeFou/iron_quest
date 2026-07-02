@@ -1,4 +1,5 @@
-import { mockCharacter } from "@/mocks/character";
+// import { mockCharacter } from "@/mocks/character";
+import { useCharacter } from "@/context/character";
 import { mockQuests } from "@/mocks/quest";
 import { getXpPercentage, getXpRequiredForLevel } from "@/models/progression";
 import { getQuestStatus } from "@/models/quest";
@@ -6,15 +7,16 @@ import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 export default function HomeScreen() {
-  const xpPercentage = getXpPercentage(mockCharacter.level, mockCharacter.xp);
-  const xpRequired = getXpRequiredForLevel(mockCharacter.level);
+  const { character } = useCharacter();
+  const xpPercentage = getXpPercentage(character.level, character.xp);
+  const xpRequired = getXpRequiredForLevel(character.level);
   return (
     <View>
-      <Text> {mockCharacter.name} </Text>
-      <Text> {mockCharacter.level} </Text>
+      <Text> {character.name} </Text>
+      <Text> {character.level} </Text>
       <Text>
         {" "}
-        {mockCharacter.xp} / {xpRequired}{" "}
+        {character.xp} / {xpRequired}{" "}
       </Text>
       <View
         style={{
