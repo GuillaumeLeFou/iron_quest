@@ -1,4 +1,4 @@
-import { WorkoutSession } from "@/types/workout";
+import { SetEntry, WorkoutSession } from "@/types/workout";
 
 export function getEstimatedOneRepMax(weight: number, reps: number): number {
   return weight * (1 + reps / 30);
@@ -30,4 +30,21 @@ export function getBestOneRepMax(
     }
   }
   return best;
+}
+
+export function getLastPerformance(
+  exerciseId: string,
+  sessions: WorkoutSession[],
+): SetEntry[] | null {
+  const sorted_sessions = [...sessions].sort((a, b) =>
+    a.date > b.date ? -1 : 1,
+  );
+  for (let session of sorted_sessions) {
+    for (let exercise of session.exercises) {
+      if (exercise.type === "strength" && exercise.exerciseId === exerciseId) {
+        return exercise.sets;
+      }
+    }
+  }
+  return null;
 }

@@ -2,6 +2,7 @@ import { WorkoutSession } from "@/types/workout";
 import {
   getBestOneRepMax,
   getEstimatedOneRepMax,
+  getLastPerformance,
   isNewPersonalRecord,
 } from "./workout";
 
@@ -99,5 +100,59 @@ describe("getBestOneRepMax", () => {
     ];
 
     expect(getBestOneRepMax("bench", sessions)).toBe(175);
+  });
+});
+
+describe("getLastPerformance", () => {
+  it("should return null when there are no sessions", () => {
+    expect(getLastPerformance("bench", [])).toBeNull();
+  });
+
+  it("should return null when the exercise is not found", () => {
+    const sessions = [createTestSession("squat", [{ weight: 150, reps: 5 }])];
+
+    expect(getLastPerformance("bench", sessions)).toBeNull();
+  });
+
+  it("should return the sets of the matching exercise", () => {
+    const sets = [{ weight: 150, reps: 5 }];
+    const sessions = [createTestSession("bench", sets)];
+
+    expect(getLastPerformance("bench", sessions)).toEqual(sets);
+  });
+
+  it("should return the sets from the most recent session", () => {
+    const oldSets = [{ weight: 100, reps: 5 }];
+    const recentSets = [{ weight: 150, reps: 5 }];
+
+    const sessions = [
+      {
+        ...createTestSession("bench", oldSets),
+        date: "2026-01-01",
+      },
+      {
+        ...createTestSession("bench", recentSets),
+        date: "2026-02-01",
+      },
+    ];
+
+    expect(getLastPerformance("bench", sessions)).toEqual(recentSets);
+  });
+
+  it("should ignore more recent sessions if they do not contain the exercise", () => {
+    const benchSets = [{ weight: 120, reps: 8 }];
+
+    const sessions = [
+      {
+        ...createTestSession("bench", benchSets),
+        date: "2026-01-01",
+      },
+      {
+        ...createTestSession("squat", [{ weight: 200, reps: 5 }]),
+        date: "2026-02-01",
+      },
+    ];
+
+    expect(getLastPerformance("bench", sessions)).toEqual(benchSets);
   });
 });

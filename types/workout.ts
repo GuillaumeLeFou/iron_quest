@@ -4,7 +4,7 @@ export interface WorkoutTemplate {
   exerciseIds: string[];
 }
 
-interface SetEntry {
+export interface SetEntry {
   weight: number;
   reps: number;
 }
