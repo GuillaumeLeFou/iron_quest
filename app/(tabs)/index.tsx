@@ -2,6 +2,7 @@ import { mockCharacter } from "@/mocks/character";
 import { mockQuests } from "@/mocks/quest";
 import { getXpPercentage, getXpRequiredForLevel } from "@/models/progression";
 import { getQuestStatus } from "@/models/quest";
+import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 export default function HomeScreen() {
@@ -42,7 +43,7 @@ export default function HomeScreen() {
           <Text> {getQuestStatus(quest)} </Text>
         </View>
       ))}
-      <Pressable onPress={() => console.log("Nouvelle séance !")}>
+      <Pressable onPress={() => router.push("/workout")}>
         <Text>Nouvelle séance</Text>
       </Pressable>
     </View>
