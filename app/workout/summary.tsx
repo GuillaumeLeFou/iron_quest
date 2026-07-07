@@ -7,7 +7,8 @@ import { useEffect } from "react";
 import { Text, View } from "react-native";
 
 export default function Summary() {
-  const { addXp } = useCharacter();
+  const { completeSession } = useCharacter();
+
   const last_session = getCurrentSession();
 
   function calculatedResults(session: WorkoutSession): {
@@ -34,22 +35,46 @@ export default function Summary() {
       }
     }
 
-    return { xpGained: 50 + bonus_pr, prs: pr };
+    return {
+      xpGained: 50 + bonus_pr,
+      prs: pr,
+    };
   }
 
   const results = last_session
     ? calculatedResults(last_session)
-    : { xpGained: 0, prs: 0 };
+    : {
+        xpGained: 0,
+        prs: 0,
+      };
 
   useEffect(() => {
-    addXp(results.xpGained);
+    if (!last_session) {
+      return;
+    }
+
+    completeSession(
+      last_session,
+
+      // TODO: remplacer par le vrai historique joueur
+      mockWorkoutSessions,
+
+      // TODO: remplacer par les vrais exercices
+      [],
+
+      results.xpGained,
+      results.prs,
+    );
   }, []);
 
   return (
     <View>
       <Text>Résumé</Text>
+
       <Text>XP: {results.xpGained}</Text>
+
       <Text>PRs: {results.prs}</Text>
+
       <Text>
         Un PR est battu uniquement si ton 1RM estimé dépasse ton record
         précédent.
