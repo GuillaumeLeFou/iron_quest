@@ -64,6 +64,12 @@ export const mockWorkoutSessions: WorkoutSession[] = [
         exerciseId: "exercise-4",
         duration: 600,
       },
+      {
+        type: "cardio",
+        exerciseId: "exercise-3",
+        distance: 2,
+        duration: 300,
+      },
     ],
   },
   {

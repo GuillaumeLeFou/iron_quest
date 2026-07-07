@@ -11,4 +11,6 @@ export const mockCharacter: Character = {
   endurance: 8,
   vitality: 10,
   discipline: 7,
+  lifetimeVolume: 10,
+  lifetimeEnduranceScore: 10,
 };

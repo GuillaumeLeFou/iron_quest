@@ -9,4 +9,6 @@ export interface Character {
   endurance: number;
   vitality: number;
   discipline: number;
+  lifetimeVolume: number;
+  lifetimeEnduranceScore: number;
 }
