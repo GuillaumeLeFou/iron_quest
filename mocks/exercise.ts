@@ -1,4 +1,8 @@
-import { Exercise } from "@/types/exercise";
+import {
+  DistanceMultiplier,
+  EnduranceIntensity,
+  Exercise,
+} from "@/types/exercise";
 
 export const mockExercises: Exercise[] = [
   {
@@ -22,6 +26,8 @@ export const mockExercises: Exercise[] = [
     description:
       "Courez à une allure adaptée à l'objectif en gardant une posture droite, une foulée fluide et une respiration régulière.",
     trackDistance: true,
+    enduranceCoefficient: EnduranceIntensity.HIGH,
+    distanceMultiplier: DistanceMultiplier.HIGH,
   },
   {
     id: "exercise-4",
@@ -29,5 +35,7 @@ export const mockExercises: Exercise[] = [
     description:
       "Sautez à un rythme régulier en effectuant de petits rebonds et faites tourner la corde avec les poignets tout en gardant le buste droit.",
     trackDistance: false,
+    enduranceCoefficient: EnduranceIntensity.HIGH,
+    distanceMultiplier: DistanceMultiplier.NONE,
   },
 ];

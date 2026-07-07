@@ -3,6 +3,7 @@ import {
   getBestOneRepMax,
   getEstimatedOneRepMax,
   getLastPerformance,
+  getTotalVolume,
   isNewPersonalRecord,
 } from "./workout";
 
@@ -154,5 +155,52 @@ describe("getLastPerformance", () => {
     ];
 
     expect(getLastPerformance("bench", sessions)).toEqual(benchSets);
+  });
+});
+
+describe("getTotalVolume", () => {
+  it("should return 0 when there are no sessions", () => {
+    expect(getTotalVolume([])).toBe(0);
+  });
+
+  it("should calculate total volume from strength exercises", () => {
+    const sessions = [
+      createTestSession("bench", [
+        { weight: 100, reps: 10 }, // 1000
+        { weight: 120, reps: 5 }, // 600
+      ]),
+    ];
+
+    expect(getTotalVolume(sessions)).toBe(1600);
+  });
+
+  it("should calculate volume across multiple sessions", () => {
+    const sessions = [
+      createTestSession("bench", [{ weight: 100, reps: 10 }]),
+      createTestSession("squat", [{ weight: 200, reps: 5 }]),
+    ];
+
+    expect(getTotalVolume(sessions)).toBe(2000);
+  });
+
+  it("should ignore cardio exercises", () => {
+    const sessions = [
+      {
+        id: "session-1",
+        templateId: "template-1",
+        date: "2026-01-01",
+        duration: 3600,
+        notes: "",
+        exercises: [
+          {
+            type: "cardio",
+            exerciseId: "running",
+            duration: 1800,
+          },
+        ],
+      },
+    ] as WorkoutSession[];
+
+    expect(getTotalVolume(sessions)).toBe(0);
   });
 });

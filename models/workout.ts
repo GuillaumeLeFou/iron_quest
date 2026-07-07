@@ -39,12 +39,26 @@ export function getLastPerformance(
   const sorted_sessions = [...sessions].sort((a, b) =>
     a.date > b.date ? -1 : 1,
   );
-  for (let session of sorted_sessions) {
-    for (let exercise of session.exercises) {
+  for (const session of sorted_sessions) {
+    for (const exercise of session.exercises) {
       if (exercise.type === "strength" && exercise.exerciseId === exerciseId) {
         return exercise.sets;
       }
     }
   }
   return null;
+}
+
+export function getTotalVolume(sessions: WorkoutSession[]): number {
+  let total = 0;
+  for (const session of sessions) {
+    for (const exercise of session.exercises) {
+      if (exercise.type === "strength") {
+        for (const set of exercise.sets) {
+          total += set.reps * set.weight;
+        }
+      }
+    }
+  }
+  return total;
 }
