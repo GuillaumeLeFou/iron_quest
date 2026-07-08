@@ -12,9 +12,14 @@ export const mockCharacter: Character = {
   vitality: 10,
   discipline: 7,
   lifetimeVolume: 10,
+  unlockedAchievements: [
+    {
+      achievementId: "vitality_1",
+      unlockedAt: "2026-01-01",
+    },
+  ],
   lifetimeEndurance: 10,
-  unlockedAchievements: [],
-  lifetimeWorkouts: 0,
+  lifetimeWorkouts: 110,
   lifetimePRs: 5,
   lifetimeDistance: 25,
   lifetimeTrainingWeeks: 0,

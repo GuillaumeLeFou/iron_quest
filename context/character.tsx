@@ -28,6 +28,8 @@ interface CharacterContextValue {
     xpGained: number,
     prsCount: number,
   ) => void;
+
+  updateName: (newName: string) => void;
 }
 
 const CharacterContext = createContext<CharacterContextValue | null>(null);
@@ -144,11 +146,16 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     updateAfterSession(session, sessions, prsCount);
   }
 
+  function updateName(newName: string) {
+    setCharacter({ ...character, name: newName });
+  }
+
   return (
     <CharacterContext.Provider
       value={{
         character,
         completeSession,
+        updateName,
       }}
     >
       {children}
