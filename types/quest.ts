@@ -6,4 +6,5 @@ export interface Quest {
   description: string;
   progression: number;
   goal: number;
+  type: "daily" | "weekly";
 }

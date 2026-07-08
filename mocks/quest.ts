@@ -7,6 +7,7 @@ export const mockQuests: Quest[] = [
     description: "Faire 10 pompes",
     progression: 0,
     goal: 10,
+    type: "daily",
   },
   {
     id: "quest-2",
@@ -14,6 +15,7 @@ export const mockQuests: Quest[] = [
     description: "Faire 1 séance abdo",
     progression: 1,
     goal: 1,
+    type: "daily",
   },
   {
     id: "quest-3",
@@ -21,5 +23,6 @@ export const mockQuests: Quest[] = [
     description: "Faire 2km",
     progression: 1.2,
     goal: 2,
+    type: "weekly",
   },
 ];
