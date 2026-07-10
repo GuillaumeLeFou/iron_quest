@@ -1,0 +1,13 @@
+export const SPRITE_SIZE = {
+  HERO: 180,
+  MASTER: 180,
+  CAMPFIRE: 180,
+  BOSS: 250,
+
+  TREE: 220,
+  ROCK: 120,
+
+  ICON_SMALL: 24,
+  ICON_MEDIUM: 32,
+  ICON_LARGE: 48,
+} as const;
