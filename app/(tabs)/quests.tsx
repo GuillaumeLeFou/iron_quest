@@ -9,8 +9,9 @@ import {
   Title,
 } from "@/components/ui/typography";
 import { Border, Colors, Radius, Spacing } from "@/constants/theme";
-import { mockQuests } from "@/mocks/quest";
-import { ReactNode } from "react";
+import { getQuests } from "@/services/quest";
+import { Quest } from "@/types/quest";
+import { ReactNode, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 type QuestSectionType = "daily" | "weekly";
@@ -23,9 +24,18 @@ type QuestSectionProps = {
 };
 
 export default function QuestScreen() {
-  const dailyQuests = mockQuests.filter((quest) => quest.type === "daily");
+  const [quests, setQuests] = useState<Quest[]>([]);
 
-  const weeklyQuests = mockQuests.filter((quest) => quest.type === "weekly");
+  useEffect(() => {
+    async function loadData() {
+      const fetchedQuests = await getQuests();
+      setQuests(fetchedQuests);
+    }
+    loadData();
+  });
+  const dailyQuests = quests.filter((quest) => quest.type === "daily");
+
+  const weeklyQuests = quests.filter((quest) => quest.type === "weekly");
 
   return (
     <Page>
