@@ -1,5 +1,3 @@
-import { mockAchievements } from "@/mocks/achievement";
-import { mockCharacter } from "@/mocks/character";
 import { getNewlyUnlockedAchievements } from "@/models/achievement";
 import {
   applyDisciplineDecay,
@@ -12,14 +10,18 @@ import {
   calculateVitality,
   getNewLevel,
 } from "@/models/progression";
+import { getAchievements } from "@/services/achievement";
+import { getCharacter } from "@/services/character";
+import { Achievement } from "@/types/achievement";
 import { Character } from "@/types/character";
 import { Exercise } from "@/types/exercise";
 import { WorkoutSession } from "@/types/workout";
 import { getCompletedTrainingWeeks } from "@/utils/date";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface CharacterContextValue {
-  character: Character;
+  character: Character | undefined;
+  isLoading: boolean;
 
   completeSession: (
     session: WorkoutSession,
@@ -35,9 +37,22 @@ interface CharacterContextValue {
 const CharacterContext = createContext<CharacterContextValue | null>(null);
 
 export function CharacterProvider({ children }: { children: React.ReactNode }) {
-  const [character, setCharacter] = useState<Character>(mockCharacter);
+  const [character, setCharacter] = useState<Character>();
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    async function loadData() {
+      const fetchedCharacter = await getCharacter();
+      const fetchedAchievements = await getAchievements();
+      setCharacter(fetchedCharacter);
+      setAchievements(fetchedAchievements);
+      setIsLoading(false);
+    }
+    loadData();
+  }, []);
 
   function addXp(xpGained: number) {
+    if (!character) return;
     const { newLevel, remainingXp } = getNewLevel(
       character.level,
       character.xp + xpGained,
@@ -58,6 +73,7 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     sessions: WorkoutSession[],
     exercises: Exercise[],
   ) {
+    if (!character) return;
     const strength = calculateStrength(sessions);
 
     const endurance = calculateEndurance(sessions, exercises);
@@ -98,6 +114,8 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     }
 
     setCharacter((current) => {
+      if (!current) return current;
+
       const updatedCharacter: Character = {
         ...current,
 
@@ -114,7 +132,7 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
 
       const newAchievements = getNewlyUnlockedAchievements(
         updatedCharacter,
-        mockAchievements,
+        achievements,
       );
 
       return {
@@ -147,6 +165,7 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
   }
 
   function updateName(newName: string) {
+    if (!character) return;
     setCharacter({ ...character, name: newName });
   }
 
@@ -154,6 +173,7 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     <CharacterContext.Provider
       value={{
         character,
+        isLoading,
         completeSession,
         updateName,
       }}
@@ -163,12 +183,13 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useCharacter(): CharacterContextValue {
+export function useCharacter(): CharacterContextValue & {
+  character: Character;
+} {
   const context = useContext(CharacterContext);
-
-  if (!context) {
+  if (!context)
     throw new Error("useCharacter must be used within a CharacterProvider");
-  }
-
-  return context;
+  if (!context.character && !context.isLoading)
+    throw new Error("Character not loaded yet");
+  return context as CharacterContextValue & { character: Character };
 }

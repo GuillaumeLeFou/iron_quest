@@ -11,9 +11,13 @@ import {
 } from "@/components/ui/typography";
 import { Border, Colors, Radius, Shadows, Spacing } from "@/constants/theme";
 import { useCharacter } from "@/context/character";
-import { mockAchievements } from "@/mocks/achievement";
-import { AchievementCategory, AchievementRarity } from "@/types/achievement";
-import { useState } from "react";
+import { getAchievements } from "@/services/achievement";
+import {
+  Achievement,
+  AchievementCategory,
+  AchievementRarity,
+} from "@/types/achievement";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 type CategoryFilter = AchievementCategory | "all";
@@ -64,20 +68,29 @@ export default function AchievementScreen() {
   const [showUnlocked, setShowUnlocked] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [rarityFilter, setRarityFilter] = useState<RarityFilter>("all");
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const fetchedAchievements = await getAchievements();
+      setAchievements(fetchedAchievements);
+    }
+    loadData();
+  }, []);
 
   function getAchievementProgress(category: AchievementCategory): number {
     switch (category) {
       case AchievementCategory.STRENGTH:
-        return character.strength;
+        return character.lifetimeVolume;
 
       case AchievementCategory.ENDURANCE:
-        return character.endurance;
+        return character.lifetimeDistance;
 
       case AchievementCategory.VITALITY:
-        return character.vitality;
+        return character.lifetimeWorkouts;
 
       case AchievementCategory.DISCIPLINE:
-        return character.discipline;
+        return character.lifetimeTrainingWeeks;
 
       case AchievementCategory.LEVEL:
         return character.level;
@@ -86,12 +99,7 @@ export default function AchievementScreen() {
         return character.lifetimePRs;
 
       case AchievementCategory.STREAK: {
-        const streakCharacter = character as typeof character & {
-          streak?: number;
-          currentStreak?: number;
-        };
-
-        return streakCharacter.currentStreak ?? streakCharacter.streak ?? 0;
+        return character.currentStreak ?? 0;
       }
 
       case AchievementCategory.SPECIAL:
@@ -117,7 +125,7 @@ export default function AchievementScreen() {
     return isStoredAsUnlocked || progress >= objective;
   }
 
-  const visibleAchievements = mockAchievements.filter((achievement) => {
+  const visibleAchievements = achievements.filter((achievement) => {
     const isCompleted = isAchievementCompleted(
       achievement.id,
       achievement.category,

@@ -10,17 +10,35 @@ import {
   Title,
 } from "@/components/ui/typography";
 import { Border, Colors, Radius, Spacing } from "@/constants/theme";
-import { mockExercises } from "@/mocks/exercise";
-import { mockWorkoutSessions, mockWorkoutTemplates } from "@/mocks/workout";
-import { WorkoutSession } from "@/types/workout";
+import { getExercises } from "@/services/exercise";
+import { getWorkoutSessions, getWorkoutTemplates } from "@/services/workout";
+import { Exercise } from "@/types/exercise";
+import { WorkoutSession, WorkoutTemplate } from "@/types/workout";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 export default function WorkoutListScreen() {
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(
     null,
   );
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(
+    [],
+  );
+
+  useEffect(() => {
+    async function loadData() {
+      const fetchedWorkoutSessions = await getWorkoutSessions();
+      const fetchedWorkoutTemplates = await getWorkoutTemplates();
+      const fetchedExercise = await getExercises();
+      setWorkoutSessions(fetchedWorkoutSessions);
+      setWorkoutTemplates(fetchedWorkoutTemplates);
+      setExercises(fetchedExercise);
+    }
+    loadData();
+  }, []);
 
   function toggleSession(sessionId: string) {
     setExpandedSessionId((currentId) =>
@@ -42,7 +60,7 @@ export default function WorkoutListScreen() {
 
       <Section title="Séances disponibles">
         <View style={styles.templateList}>
-          {mockWorkoutTemplates.map((workout) => (
+          {workoutTemplates.map((workout) => (
             <Pressable
               key={workout.id}
               onPress={() => router.push(`/workout/${workout.id}`)}
@@ -71,7 +89,7 @@ export default function WorkoutListScreen() {
 
       <Section title="Historique du camp">
         <View style={styles.historyList}>
-          {mockWorkoutSessions.map((session) => {
+          {workoutSessions.map((session) => {
             const isExpanded = expandedSessionId === session.id;
 
             return (
@@ -80,6 +98,8 @@ export default function WorkoutListScreen() {
                 session={session}
                 isExpanded={isExpanded}
                 onPress={() => toggleSession(session.id)}
+                exercises={exercises}
+                workoutTemplates={workoutTemplates}
               />
             );
           })}
@@ -93,10 +113,18 @@ type HistoryCardProps = {
   session: WorkoutSession;
   isExpanded: boolean;
   onPress: () => void;
+  exercises: Exercise[];
+  workoutTemplates: WorkoutTemplate[];
 };
 
-function HistoryCard({ session, isExpanded, onPress }: HistoryCardProps) {
-  const template = mockWorkoutTemplates.find(
+function HistoryCard({
+  session,
+  isExpanded,
+  onPress,
+  exercises,
+  workoutTemplates,
+}: HistoryCardProps) {
+  const template = workoutTemplates.find(
     (workoutTemplate) => workoutTemplate.id === session.templateId,
   );
 
@@ -149,7 +177,7 @@ function HistoryCard({ session, isExpanded, onPress }: HistoryCardProps) {
             </Body>
           ) : (
             session.exercises.map((loggedExercise, exerciseIndex) => {
-              const exercise = mockExercises.find(
+              const exercise = exercises.find(
                 (item) => item.id === loggedExercise.exerciseId,
               );
 

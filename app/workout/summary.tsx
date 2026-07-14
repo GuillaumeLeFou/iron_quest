@@ -10,18 +10,27 @@ import {
 } from "@/components/ui/typography";
 import { Colors, Spacing } from "@/constants/theme";
 import { useCharacter } from "@/context/character";
-import { mockWorkoutSessions } from "@/mocks/workout";
 import { getBestOneRepMax, isNewPersonalRecord } from "@/models/workout";
 import { getCurrentSession } from "@/services/session";
+import { getWorkoutSessions } from "@/services/workout";
 import { WorkoutSession } from "@/types/workout";
 import { router } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 
 export default function Summary() {
   const { completeSession } = useCharacter();
 
   const lastSession = getCurrentSession();
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const fetchedWorkoutSessions = await getWorkoutSessions();
+      setWorkoutSessions(fetchedWorkoutSessions);
+    }
+    loadData();
+  }, []);
 
   function calculateResults(session: WorkoutSession): {
     xpGained: number;
@@ -35,7 +44,7 @@ export default function Summary() {
       for (const set of exercise.sets) {
         const previousBestOneRepMax = getBestOneRepMax(
           exercise.exerciseId,
-          mockWorkoutSessions,
+          workoutSessions,
         );
 
         if (isNewPersonalRecord(set.weight, set.reps, previousBestOneRepMax)) {
@@ -58,21 +67,16 @@ export default function Summary() {
       };
 
   useEffect(() => {
-    if (!lastSession) return;
+    if (!lastSession || workoutSessions.length === 0) return;
 
     completeSession(
       lastSession,
-
-      // TODO: remplacer par le vrai historique joueur
-      mockWorkoutSessions,
-
-      // TODO: remplacer par les vrais exercices
+      workoutSessions,
       [],
-
       results.xpGained,
       results.prs,
     );
-  }, []);
+  }, [workoutSessions.length]);
 
   return (
     <Page scroll={false} contentStyle={styles.content}>

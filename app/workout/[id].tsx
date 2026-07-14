@@ -10,41 +10,55 @@ import {
   Title,
 } from "@/components/ui/typography";
 import { Border, Colors, Radius, Spacing } from "@/constants/theme";
-import { mockExercises } from "@/mocks/exercise";
-import { mockWorkoutSessions, mockWorkoutTemplates } from "@/mocks/workout";
 import { getLastPerformance } from "@/models/workout";
+import { getExercises } from "@/services/exercise";
 import { saveCurrentSession } from "@/services/session";
-import { SetEntry, WorkoutSession } from "@/types/workout";
+import { getWorkoutSessions, getWorkoutTemplates } from "@/services/workout";
+import { Exercise } from "@/types/exercise";
+import { SetEntry, WorkoutSession, WorkoutTemplate } from "@/types/workout";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 export default function WorkoutScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
+  const [workoutTemplates, setWorkoutTemplates] = useState<WorkoutTemplate[]>(
+    [],
+  );
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [sets, setSets] = useState<Record<string, SetEntry[]>>({});
 
-  const workout = mockWorkoutTemplates.find((template) => template.id === id);
+  useEffect(() => {
+    async function loadData() {
+      const fetchedWorkoutSessions = await getWorkoutSessions();
+      const fetchedWorkoutTemplates = await getWorkoutTemplates();
+      const fetchedExercise = await getExercises();
+      setWorkoutSessions(fetchedWorkoutSessions);
+      setWorkoutTemplates(fetchedWorkoutTemplates);
+      setExercises(fetchedExercise);
+    }
+    loadData();
+  }, []);
 
-  const exercises = mockExercises.filter((exercise) =>
+  const workout = workoutTemplates.find(
+    (template: { id: string }) => template.id === id,
+  );
+
+  const filteredExercises = exercises.filter((exercise) =>
     workout?.exerciseIds.includes(exercise.id),
   );
 
-  const initialSets: Record<string, SetEntry[]> = {};
+  useEffect(() => {
+    if (filteredExercises.length === 0) return;
 
-  for (const exercise of exercises) {
-    const lastPerformance = getLastPerformance(
-      exercise.id,
-      mockWorkoutSessions,
-    );
-
-    initialSets[exercise.id] = lastPerformance ?? [
-      {
-        weight: 0,
-        reps: 0,
-      },
-    ];
-  }
-
-  const [sets, setSets] = useState<Record<string, SetEntry[]>>(initialSets);
+    const newSets: Record<string, SetEntry[]> = {};
+    for (const exercise of filteredExercises) {
+      const lastPerformance = getLastPerformance(exercise.id, workoutSessions);
+      newSets[exercise.id] = lastPerformance ?? [{ weight: 0, reps: 0 }];
+    }
+    setSets(newSets);
+  }, [filteredExercises.length, workoutSessions.length]);
 
   function handleAddSet(exerciseId: string) {
     setSets((currentSets) => ({
@@ -139,7 +153,7 @@ export default function WorkoutScreen() {
       </Card>
 
       <View style={styles.exerciseList}>
-        {exercises.map((exercise) => (
+        {filteredExercises.map((exercise) => (
           <Card key={exercise.id} style={styles.exerciseCard}>
             <View style={styles.exerciseHeader}>
               <View style={styles.exerciseHeaderText}>
@@ -179,7 +193,7 @@ export default function WorkoutScreen() {
               </Caption>
             </View>
 
-            {sets[exercise.id].map((set, index) => {
+            {(sets[exercise.id] ?? []).map((set, index) => {
               const canRemoveSet = sets[exercise.id].length > 1;
 
               return (
