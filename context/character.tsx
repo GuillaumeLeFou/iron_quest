@@ -1,3 +1,4 @@
+import { supabase } from "@/lib/supabase";
 import { getNewlyUnlockedAchievements } from "@/models/achievement";
 import {
   applyDisciplineDecay,
@@ -10,8 +11,12 @@ import {
   calculateVitality,
   getNewLevel,
 } from "@/models/progression";
-import { getAchievements } from "@/services/achievement";
-import { getCharacter } from "@/services/character";
+import {
+  getAchievements,
+  saveUnlockedAchievement,
+} from "@/services/achievement";
+import { getCharacter, saveCharacter } from "@/services/character";
+import { saveWorkoutSession } from "@/services/workout";
 import { Achievement } from "@/types/achievement";
 import { Character } from "@/types/character";
 import { Exercise } from "@/types/exercise";
@@ -20,8 +25,9 @@ import { getCompletedTrainingWeeks } from "@/utils/date";
 import { createContext, useContext, useEffect, useState } from "react";
 
 interface CharacterContextValue {
-  character: Character | undefined;
+  character: Character | null;
   isLoading: boolean;
+  reloadCharacter: () => Promise<void>;
 
   completeSession: (
     session: WorkoutSession,
@@ -29,7 +35,7 @@ interface CharacterContextValue {
     exercises: Exercise[],
     xpGained: number,
     prsCount: number,
-  ) => void;
+  ) => Promise<void>;
 
   updateName: (newName: string) => void;
 }
@@ -37,35 +43,75 @@ interface CharacterContextValue {
 const CharacterContext = createContext<CharacterContextValue | null>(null);
 
 export function CharacterProvider({ children }: { children: React.ReactNode }) {
-  const [character, setCharacter] = useState<Character>();
+  const [character, setCharacter] = useState<Character | null>(null);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    async function loadData() {
-      const fetchedCharacter = await getCharacter();
-      const fetchedAchievements = await getAchievements();
-      setCharacter(fetchedCharacter);
-      setAchievements(fetchedAchievements);
+    let mounted = true;
+
+    async function initialize() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!mounted) return;
+
+      if (session?.user) {
+        const fetchedCharacter = await getCharacter();
+        const fetchedAchievements = await getAchievements();
+        if (!mounted) return;
+        setCharacter(fetchedCharacter ?? null);
+        setAchievements(fetchedAchievements);
+      } else {
+        setCharacter(null);
+        setAchievements([]);
+      }
       setIsLoading(false);
     }
-    loadData();
+
+    initialize();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  useEffect(() => {
+    if (!character || isLoading) return;
+
+    saveCharacter(character).catch((error) => {
+      console.error("Erreur pendant la sauvegarde du personnage :", error);
+    });
+  }, [character, isLoading]);
+
+  async function reloadCharacter() {
+    setIsLoading(true);
+    const fetchedCharacter = await getCharacter();
+    const fetchedAchievements = await getAchievements();
+    setCharacter(fetchedCharacter ?? null);
+    setAchievements(fetchedAchievements);
+    setIsLoading(false);
+  }
+
   function addXp(xpGained: number) {
-    if (!character) return;
-    const { newLevel, remainingXp } = getNewLevel(
-      character.level,
-      character.xp + xpGained,
-    );
+    setCharacter((current) => {
+      if (!current) return current;
 
-    if (newLevel > character.level) {
-      console.log(`Level up ! ${character.level} → ${newLevel}`);
-    }
+      const { newLevel, remainingXp } = getNewLevel(
+        current.level,
+        current.xp + xpGained,
+      );
 
-    setCharacter({
-      ...character,
-      level: newLevel,
-      xp: remainingXp,
+      if (newLevel > current.level) {
+        console.log(`Level up ! ${current.level} → ${newLevel}`);
+      }
+
+      return {
+        ...current,
+        level: newLevel,
+        xp: remainingXp,
+      };
     });
   }
 
@@ -73,25 +119,25 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     sessions: WorkoutSession[],
     exercises: Exercise[],
   ) {
-    if (!character) return;
-    const strength = calculateStrength(sessions);
+    setCharacter((current) => {
+      if (!current) return current;
 
-    const endurance = calculateEndurance(sessions, exercises);
+      const strength = calculateStrength(sessions);
+      const endurance = calculateEndurance(sessions, exercises);
+      const vitality = calculateVitality(sessions);
+      const discipline = calculateDiscipline(sessions);
 
-    const vitality = calculateVitality(sessions);
+      return {
+        ...current,
 
-    const discipline = calculateDiscipline(sessions);
+        strength: applyStrengthDecay(strength, sessions),
 
-    setCharacter({
-      ...character,
+        endurance: applyEnduranceDecay(endurance, sessions),
 
-      strength: applyStrengthDecay(strength, sessions),
+        vitality: applyVitalityDecay(vitality, sessions),
 
-      endurance: applyEnduranceDecay(endurance, sessions),
-
-      vitality: applyVitalityDecay(vitality, sessions),
-
-      discipline: applyDisciplineDecay(discipline, sessions),
+        discipline: applyDisciplineDecay(discipline, sessions),
+      };
     });
   }
 
@@ -106,10 +152,11 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
     for (const exercise of session.exercises) {
       if (exercise.type === "cardio") {
         sessionDistance += exercise.distance ?? 0;
-      } else {
-        for (const set of exercise.sets) {
-          sessionVolume += set.weight * set.reps;
-        }
+        continue;
+      }
+
+      for (const set of exercise.sets) {
+        sessionVolume += set.weight * set.reps;
       }
     }
 
@@ -135,28 +182,39 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
         achievements,
       );
 
+      const newUnlockedAchievements = newAchievements.map((achievement) => ({
+        achievementId: achievement.id,
+        unlockedAt: new Date().toISOString(),
+      }));
+
+      for (const achievement of newAchievements) {
+        void saveUnlockedAchievement(achievement.id).catch((error) => {
+          console.error(
+            `Erreur pendant la sauvegarde du succès ${achievement.id} :`,
+            error,
+          );
+        });
+      }
+
       return {
         ...updatedCharacter,
 
         unlockedAchievements: [
           ...updatedCharacter.unlockedAchievements,
-
-          ...newAchievements.map((achievement) => ({
-            achievementId: achievement.id,
-            unlockedAt: new Date().toISOString(),
-          })),
+          ...newUnlockedAchievements,
         ],
       };
     });
   }
 
-  function completeSession(
+  async function completeSession(
     session: WorkoutSession,
     sessions: WorkoutSession[],
     exercises: Exercise[],
     xpGained: number,
     prsCount: number,
   ) {
+    await saveWorkoutSession(session);
     addXp(xpGained);
 
     updateCharacterStats(sessions, exercises);
@@ -165,8 +223,14 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
   }
 
   function updateName(newName: string) {
-    if (!character) return;
-    setCharacter({ ...character, name: newName });
+    setCharacter((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        name: newName,
+      };
+    });
   }
 
   return (
@@ -176,6 +240,7 @@ export function CharacterProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         completeSession,
         updateName,
+        reloadCharacter,
       }}
     >
       {children}
@@ -189,7 +254,8 @@ export function useCharacter(): CharacterContextValue & {
   const context = useContext(CharacterContext);
   if (!context)
     throw new Error("useCharacter must be used within a CharacterProvider");
-  if (!context.character && !context.isLoading)
-    throw new Error("Character not loaded yet");
+  if (!context.character && !context.isLoading) {
+    return context as CharacterContextValue & { character: Character };
+  }
   return context as CharacterContextValue & { character: Character };
 }

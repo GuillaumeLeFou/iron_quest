@@ -6,6 +6,7 @@ type PrimaryButtonProps = {
   title: string;
   subtitle?: string;
   onPress: () => void;
+  disabled?: boolean;
 };
 
 export function PrimaryButton({
