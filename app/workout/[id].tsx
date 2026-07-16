@@ -28,6 +28,7 @@ export default function WorkoutScreen() {
   );
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [sets, setSets] = useState<Record<string, SetEntry[]>>({});
+  const [duration, setDuration] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -108,7 +109,7 @@ export default function WorkoutScreen() {
       id: Date.now().toString(),
       templateId: workout.id,
       date: new Date().toISOString(),
-      duration: 0,
+      duration: Number(duration) * 60,
       notes: "",
       exercises: Object.entries(sets).map(([exerciseId, exerciseSets]) => ({
         type: "strength" as const,
@@ -140,9 +141,26 @@ export default function WorkoutScreen() {
         <Title style={styles.title}>Séance en cours</Title>
       </View>
 
-      <Body muted style={styles.pageSubtitle}>
-        {workout.name}
-      </Body>
+      <View style={styles.workoutHeader}>
+        <Body muted style={styles.pageSubtitle}>
+          {workout.name}
+        </Body>
+
+        <View style={styles.sessionDuration}>
+          <Caption muted>Durée</Caption>
+
+          <TextInput
+            value={duration}
+            onChangeText={setDuration}
+            keyboardType="number-pad"
+            style={styles.durationInput}
+            placeholder="60"
+            placeholderTextColor={Colors.textDisabled}
+          />
+
+          <Label muted>min</Label>
+        </View>
+      </View>
 
       <Card style={styles.infoPanel}>
         <Heading style={styles.infoTitle}>Ordre d’entraînement</Heading>
@@ -153,100 +171,153 @@ export default function WorkoutScreen() {
       </Card>
 
       <View style={styles.exerciseList}>
-        {filteredExercises.map((exercise) => (
-          <Card key={exercise.id} style={styles.exerciseCard}>
-            <View style={styles.exerciseHeader}>
-              <View style={styles.exerciseHeaderText}>
-                <Heading style={styles.exerciseName}>{exercise.name}</Heading>
+        {filteredExercises.map((exercise) => {
+          const isStrengthExercise = "equipment" in exercise;
+          return (
+            <Card key={exercise.id} style={styles.exerciseCard}>
+              <View style={styles.exerciseHeader}>
+                <View style={styles.exerciseHeaderText}>
+                  <Heading style={styles.exerciseName}>{exercise.name}</Heading>
+                  <Caption muted style={styles.exerciseSubtitle}>
+                    {"equipment" in exercise ? "Séries de force" : "Cardio"}
+                  </Caption>
+                </View>
 
-                <Caption muted style={styles.exerciseSubtitle}>
-                  Séries de force
-                </Caption>
-              </View>
-
-              <Pressable
-                onPress={() => handleAddSet(exercise.id)}
-                style={({ pressed }) => [
-                  styles.addButton,
-                  pressed && styles.buttonPressed,
-                ]}
-              >
-                <Label color={Colors.primary}>+ Série</Label>
-              </Pressable>
-            </View>
-
-            <View style={styles.setHeader}>
-              <Caption muted style={styles.setHeaderText}>
-                Série
-              </Caption>
-
-              <Caption muted style={styles.setHeaderText}>
-                Kg
-              </Caption>
-
-              <Caption muted style={styles.setHeaderText}>
-                Reps
-              </Caption>
-
-              <Caption muted style={styles.setHeaderText}>
-                Action
-              </Caption>
-            </View>
-
-            {(sets[exercise.id] ?? []).map((set, index) => {
-              const canRemoveSet = sets[exercise.id].length > 1;
-
-              return (
-                <View key={index} style={styles.setRow}>
-                  <Label color={Colors.primary} style={styles.setNumber}>
-                    {index + 1}
-                  </Label>
-
-                  <TextInput
-                    value={String(set.weight)}
-                    onChangeText={(text) =>
-                      handleUpdateSet(exercise.id, index, "weight", text)
-                    }
-                    keyboardType="numeric"
-                    style={styles.input}
-                    placeholder="0"
-                    placeholderTextColor={Colors.textDisabled}
-                    selectTextOnFocus
-                  />
-
-                  <TextInput
-                    value={String(set.reps)}
-                    onChangeText={(text) =>
-                      handleUpdateSet(exercise.id, index, "reps", text)
-                    }
-                    keyboardType="numeric"
-                    style={styles.input}
-                    placeholder="0"
-                    placeholderTextColor={Colors.textDisabled}
-                    selectTextOnFocus
-                  />
-
+                {"equipment" in exercise && (
                   <Pressable
-                    onPress={() => handleRemoveSet(exercise.id, index)}
-                    disabled={!canRemoveSet}
+                    onPress={() => handleAddSet(exercise.id)}
                     style={({ pressed }) => [
-                      styles.removeButton,
-                      !canRemoveSet && styles.removeButtonDisabled,
-                      pressed && canRemoveSet && styles.buttonPressed,
+                      styles.addButton,
+                      pressed && styles.buttonPressed,
                     ]}
                   >
-                    <Label
-                      color={Colors.danger}
-                      style={styles.removeButtonText}
-                    >
-                      ×
-                    </Label>
+                    <Label color={Colors.primary}>+ Série</Label>
                   </Pressable>
+                )}
+              </View>
+
+              {"equipment" in exercise ? (
+                <>
+                  <View style={styles.setHeader}>
+                    <Caption muted style={styles.setHeaderText}>
+                      Série
+                    </Caption>
+
+                    <Caption muted style={styles.setHeaderText}>
+                      Kg
+                    </Caption>
+
+                    <Caption muted style={styles.setHeaderText}>
+                      Reps
+                    </Caption>
+
+                    <Caption muted style={styles.setHeaderText}>
+                      Action
+                    </Caption>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.cardioFields}>
+                  <View style={styles.cardioField}>
+                    <Caption muted style={styles.cardioLabel}>
+                      Durée
+                    </Caption>
+
+                    <View style={styles.cardioInputRow}>
+                      <TextInput
+                        placeholder="0"
+                        placeholderTextColor={Colors.textDisabled}
+                        keyboardType="number-pad"
+                        style={styles.cardioInput}
+                        selectTextOnFocus
+                      />
+
+                      <Label muted style={styles.cardioUnit}>
+                        min
+                      </Label>
+                    </View>
+                  </View>
+
+                  {"trackDistance" in exercise && exercise.trackDistance && (
+                    <View style={styles.cardioField}>
+                      <Caption muted style={styles.cardioLabel}>
+                        Distance
+                      </Caption>
+
+                      <View style={styles.cardioInputRow}>
+                        <TextInput
+                          placeholder="0"
+                          placeholderTextColor={Colors.textDisabled}
+                          keyboardType="decimal-pad"
+                          style={styles.cardioInput}
+                          selectTextOnFocus
+                        />
+
+                        <Label muted style={styles.cardioUnit}>
+                          km
+                        </Label>
+                      </View>
+                    </View>
+                  )}
                 </View>
-              );
-            })}
-          </Card>
-        ))}
+              )}
+
+              {isStrengthExercise &&
+                (sets[exercise.id] ?? []).map((set, index) => {
+                  const canRemoveSet = sets[exercise.id].length > 1;
+
+                  return (
+                    <View key={index} style={styles.setRow}>
+                      <Label color={Colors.primary} style={styles.setNumber}>
+                        {index + 1}
+                      </Label>
+
+                      <TextInput
+                        value={String(set.weight)}
+                        onChangeText={(text) =>
+                          handleUpdateSet(exercise.id, index, "weight", text)
+                        }
+                        keyboardType="numeric"
+                        style={styles.input}
+                        placeholder="0"
+                        placeholderTextColor={Colors.textDisabled}
+                        selectTextOnFocus
+                      />
+
+                      <TextInput
+                        value={String(set.reps)}
+                        onChangeText={(text) =>
+                          handleUpdateSet(exercise.id, index, "reps", text)
+                        }
+                        keyboardType="numeric"
+                        style={styles.input}
+                        placeholder="0"
+                        placeholderTextColor={Colors.textDisabled}
+                        selectTextOnFocus
+                      />
+
+                      <Pressable
+                        onPress={() => handleRemoveSet(exercise.id, index)}
+                        disabled={!canRemoveSet}
+                        style={({ pressed }) => [
+                          styles.removeButton,
+                          !canRemoveSet && styles.removeButtonDisabled,
+                          pressed && canRemoveSet && styles.buttonPressed,
+                        ]}
+                      >
+                        <Label
+                          color={Colors.danger}
+                          style={styles.removeButtonText}
+                        >
+                          ×
+                        </Label>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+            </Card>
+          );
+        })}
       </View>
 
       <PrimaryButton
@@ -410,5 +481,87 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: Spacing.sm,
     textAlign: "center",
+  },
+
+  cardioFields: {
+    flexDirection: "row",
+    gap: Spacing.md,
+  },
+
+  cardioField: {
+    flex: 1,
+    gap: Spacing.sm,
+  },
+
+  cardioLabel: {
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  cardioInputRow: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    backgroundColor: Colors.background,
+    borderWidth: Border.thin,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+  },
+
+  cardioInput: {
+    flex: 1,
+    minHeight: 46,
+    color: Colors.text,
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
+    paddingVertical: Spacing.sm,
+  },
+
+  cardioUnit: {
+    minWidth: 28,
+    color: Colors.textMuted,
+    textAlign: "right",
+  },
+
+  sessionInfo: {
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xl,
+  },
+
+  sessionDuration: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: Spacing.sm,
+
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+
+    backgroundColor: Colors.card,
+    borderWidth: Border.thin,
+    borderColor: Colors.border,
+    borderRadius: Radius.md,
+  },
+
+  durationInput: {
+    minWidth: 42,
+    paddingVertical: 0,
+
+    color: Colors.text,
+    textAlign: "center",
+
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  workoutHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xl,
   },
 });

@@ -67,8 +67,7 @@ export default function Summary() {
       };
 
   useEffect(() => {
-    if (!lastSession || workoutSessions.length === 0) return;
-
+    if (!lastSession) return;
     completeSession(
       lastSession,
       workoutSessions,
@@ -76,7 +75,7 @@ export default function Summary() {
       results.xpGained,
       results.prs,
     );
-  }, [workoutSessions.length]);
+  }, []);
 
   return (
     <Page scroll={false} contentStyle={styles.content}>

@@ -1,9 +1,9 @@
 import { AnimatedFrameSprite } from "@/components/game/AnimatedSprite";
 import { SPRITE_SIZE } from "@/constants/size";
-import { Colors, Radius, Spacing } from "@/constants/theme";
+import { Border, Colors, Radius, Spacing } from "@/constants/theme";
 import { useCharacter } from "@/context/character";
 import { getXpPercentage, getXpRequiredForLevel } from "@/models/progression";
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 const CampBackground = require("@/assets/backgrounds/camp_1.png");
@@ -21,26 +21,38 @@ const MasterFrames = [
 ];
 
 export default function HomeScreen() {
-  const { character } = useCharacter();
+  const { character, isLoading } = useCharacter();
+  if (isLoading || !character) return <Redirect href="/auth/login" />;
 
   const xpPercentage = getXpPercentage(character.level, character.xp);
   const xpRequired = getXpRequiredForLevel(character.level);
-
   return (
     <View style={styles.container}>
       <Image source={CampBackground} style={styles.background} />
 
       <View style={styles.header}>
-        <Text style={styles.name}>{character.name}</Text>
-        <Text style={styles.level}>Niveau {character.level}</Text>
+        <View style={styles.headerTop}>
+          <View style={styles.characterInfo}>
+            <Text style={styles.name}>{character.name}</Text>
+            <Text style={styles.level}>Niveau {character.level}</Text>
+          </View>
+
+          <View style={styles.levelBadge}>
+            <Text style={styles.levelBadgeText}>{character.level}</Text>
+          </View>
+        </View>
+
+        <View style={styles.xpHeader}>
+          <Text style={styles.xpLabel}>Progression</Text>
+
+          <Text style={styles.xpText}>
+            {character.xp} / {xpRequired} XP
+          </Text>
+        </View>
 
         <View style={styles.xpBar}>
           <View style={[styles.xpFill, { width: `${xpPercentage}%` }]} />
         </View>
-
-        <Text style={styles.xpText}>
-          {character.xp} / {xpRequired} XP
-        </Text>
       </View>
 
       <Pressable
@@ -89,7 +101,6 @@ export default function HomeScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -105,41 +116,107 @@ const styles = StyleSheet.create({
 
   header: {
     position: "absolute",
-    top: 60,
-    left: 20,
-    right: 20,
+    top: 58,
+    left: 18,
+    right: 18,
     zIndex: 30,
+
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+
+    backgroundColor: "rgba(0,0,0,0.18)",
+
+    borderRadius: Radius.md,
+  },
+
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+  },
+
+  characterInfo: {
+    flex: 1,
   },
 
   name: {
     color: Colors.text,
-    fontSize: 26,
-    fontWeight: "900",
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "800",
   },
 
   level: {
-    color: Colors.primary,
+    color: Colors.textSecondary,
     marginTop: Spacing.xs,
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "600",
+  },
+
+  levelBadge: {
+    width: 44,
+    height: 44,
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    backgroundColor: Colors.primarySoft,
+
+    borderWidth: Border.thin,
+    borderColor: Colors.primary,
+    borderRadius: Radius.pill,
+  },
+
+  levelBadgeText: {
+    color: Colors.primary,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "800",
+  },
+
+  xpHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: Spacing.md,
+
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+  },
+
+  xpLabel: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: "700",
   },
 
+  xpText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
+  },
+
   xpBar: {
-    marginTop: 10,
-    height: 12,
-    borderRadius: Radius.sm,
+    width: "100%",
+    height: 10,
+
     overflow: "hidden",
-    backgroundColor: "rgba(17, 19, 24, 0.65)",
+
+    backgroundColor: Colors.cardSoft,
+
+    borderWidth: Border.thin,
+    borderColor: Colors.border,
+    borderRadius: Radius.pill,
   },
 
   xpFill: {
     height: "100%",
     backgroundColor: Colors.primary,
-  },
-
-  xpText: {
-    color: Colors.text,
-    marginTop: 6,
-    fontWeight: "600",
+    borderRadius: Radius.pill,
   },
 
   tentZone: {
@@ -182,31 +259,52 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     bottom: 30,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
+
+    minHeight: 64,
+
+    alignItems: "center",
+    justifyContent: "center",
+
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+
+    backgroundColor: "rgba(26, 29, 36, 0.94)",
+
+    borderWidth: Border.thin,
     borderColor: Colors.primary,
     borderRadius: Radius.xl,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+
+    elevation: 7,
     zIndex: 40,
   },
 
   trainingButtonPressed: {
-    opacity: 0.75,
+    opacity: 0.78,
     transform: [{ translateY: 2 }],
   },
 
   trainingTitle: {
     color: Colors.primary,
-    fontSize: 20,
-    fontWeight: "900",
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "800",
     textAlign: "center",
   },
 
   trainingSubtitle: {
     color: Colors.textMuted,
     marginTop: Spacing.xs,
-    textAlign: "center",
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: "600",
+    textAlign: "center",
   },
 });
