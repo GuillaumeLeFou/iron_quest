@@ -10,18 +10,40 @@ import {
 } from "@/components/ui/typography";
 import { Colors, Radius, Spacing } from "@/constants/theme";
 import { useCharacter } from "@/context/character";
+import { signOut } from "@/services/auth";
+import { router } from "expo-router";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 export default function Profile() {
   const { character } = useCharacter();
 
+  async function handleSignOut() {
+    await signOut();
+    router.replace("/auth/login");
+  }
+
   return (
     <Page>
-      <Title>Tente du héros</Title>
-      <Body muted style={styles.pageSubtitle}>
-        Profil et progression
-      </Body>
+      <View style={styles.headerRow}>
+        <View>
+          <Title>Tente du héros</Title>
+
+          <Body muted style={styles.pageSubtitle}>
+            Profil et progression
+          </Body>
+        </View>
+
+        <Pressable
+          onPress={handleSignOut}
+          style={({ pressed }) => [
+            styles.logoutButton,
+            pressed && styles.logoutButtonPressed,
+          ]}
+        >
+          <Label style={styles.logoutText}>Déconnexion</Label>
+        </Pressable>
+      </View>
 
       <Card style={styles.heroCard}>
         <View style={styles.avatarBox}>
@@ -37,6 +59,7 @@ export default function Profile() {
 
           <View style={styles.goldRow}>
             <Label style={styles.goldIcon}>🪙</Label>
+
             <Label color={Colors.gold}>{character.gold} or</Label>
           </View>
         </View>
@@ -117,9 +140,7 @@ type StatCardProps = {
 function StatCard({ label, value, color }: StatCardProps) {
   return (
     <Card style={[styles.statCard, { borderColor: color }]}>
-      <Heading color={color} style={styles.statValue}>
-        {value}
-      </Heading>
+      <Heading style={styles.statValue}>{value}</Heading>
 
       <Caption muted style={styles.statLabel}>
         {label}
@@ -147,9 +168,32 @@ function RecordRow({ label, value, isLast = false }: RecordRowProps) {
 }
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+
   pageSubtitle: {
     marginTop: Spacing.xs,
     marginBottom: Spacing.xl,
+  },
+
+  logoutButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+
+  logoutButtonPressed: {
+    opacity: 0.6,
+  },
+
+  logoutText: {
+    color: Colors.textMuted,
   },
 
   heroCard: {
